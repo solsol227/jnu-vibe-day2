@@ -117,9 +117,9 @@ def health():
 
 @app.get("/health/db")
 def health_db():
-    """Supabase 연결 + places 테이블 존재 확인"""
+    """Supabase 연결 + jnu_vc2_places 테이블 존재 확인"""
     try:
-        sb.table("places").select("id").limit(1).execute()
+        sb.table("jnu_vc2_places").select("id").limit(1).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"supabase error: {e}")
     return {"status": "ok", "db": "connected"}
@@ -128,7 +128,7 @@ def health_db():
 @app.get("/places")
 def list_places():
     try:
-        res = sb.table("places").select("*").order("id", desc=True).execute()
+        res = sb.table("jnu_vc2_places").select("*").order("id", desc=True).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return res.data
@@ -137,7 +137,7 @@ def list_places():
 @app.post("/places", status_code=201)
 def create_place(place: PlaceIn):
     try:
-        res = sb.table("places").insert(place.model_dump()).execute()
+        res = sb.table("jnu_vc2_places").insert(place.model_dump()).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return res.data[0]
@@ -146,7 +146,7 @@ def create_place(place: PlaceIn):
 @app.delete("/places/{place_id}")
 def delete_place(place_id: int):
     try:
-        sb.table("places").delete().eq("id", place_id).execute()
+        sb.table("jnu_vc2_places").delete().eq("id", place_id).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return {"deleted": place_id}`;
@@ -168,10 +168,10 @@ FRONT_ORIGINS=https://내-사이트.vercel.app
 # ── 로컬에서는 이 역할을 my-api/.env 파일이 함 ──`;
 
 const SB_FILES = `# ① 우리 코드 (main.py 63번째 줄)
-res = sb.table("places").insert(place.model_dump()).execute()
+res = sb.table("jnu_vc2_places").insert(place.model_dump()).execute()
 
 # ② supabase 라이브러리가 만드는 HTTP 요청
-POST https://xxxx.supabase.co/rest/v1/places
+POST https://xxxx.supabase.co/rest/v1/jnu_vc2_places
 apikey: sb_secret_...
 Authorization: Bearer sb_secret_...
 Content-Type: application/json
@@ -180,7 +180,7 @@ Prefer: return=representation
 {"name": "우도", "description": "소의 섬"}
 
 # ③ Supabase 안의 PostgREST가 바꾸는 SQL
-insert into public.places (name, description)
+insert into public.jnu_vc2_places (name, description)
 values ('우도', '소의 섬')
 returning *;
 
@@ -217,7 +217,7 @@ const TABS = {
    {n:2,l:[[22,28]],t:"문지기가 출입 명단을 확인합니다",c:"요청의 Origin(보낸 사이트 주소)이 FRONT_ORIGINS에 있는지 확인하고, 있으면 응답에 허가 도장(헤더)을 찍어 줄 준비를 해요.",x:"서버는 요청을 처리하긴 해요. 허가 헤더가 없으면 '브라우저가' 결과를 사용자에게 안 보여줍니다.",carry:"Origin 확인 ✔"},
    {n:3,l:[[60,61]],t:"라우터가 '방법 + 주소'로 함수를 찾습니다",c:"연결표에서 POST + /places 를 찾아 create_place 함수를 고릅니다. 만약 GET /places였다면 list_places가 선택돼요. 없는 주소면 여기서 404 Not Found.",x:"같은 /places 라도 GET과 POST는 서로 다른 함수예요.",carry:"→ create_place 선택"},
    {n:4,l:[[31,33],[61,61]],t:"Pydantic이 받은 내용을 양식(PlaceIn)과 대조합니다",c:"함수 인자 'place: PlaceIn'을 보고 FastAPI가 자동으로 JSON을 읽어 name은 글자여야 하고, description은 없으면 \"\"로 채우는 검사를 해요. 통과하면 place.name 처럼 쓸 수 있는 객체가 돼요.",x:"name을 빼먹거나 숫자 배열을 보내면 내 함수는 실행조차 되지 않고 422 에러가 자동으로 돌아가요. 검사 코드를 직접 짠 적이 없는데도요!",carry:"검증 통과 → place 객체"},
-   {n:5,l:[[61,66]],t:"드디어 내가 쓴 함수 create_place가 실행됩니다",c:"try 안에서 Supabase 저장을 시도하고, 실패하면 except가 HTTPException(500)으로 에러 응답을 만들어요. 함수는 def(일반 함수)라서 FastAPI가 별도 작업 스레드에서 실행해 다른 요청을 막지 않아요.",x:"place.model_dump() = 양식 객체를 {\"name\":…, \"description\":…} 딕셔너리로 되돌리는 코드.",carry:"sb.table(\"places\").insert(...)"},
+   {n:5,l:[[61,66]],t:"드디어 내가 쓴 함수 create_place가 실행됩니다",c:"try 안에서 Supabase 저장을 시도하고, 실패하면 except가 HTTPException(500)으로 에러 응답을 만들어요. 함수는 def(일반 함수)라서 FastAPI가 별도 작업 스레드에서 실행해 다른 요청을 막지 않아요.",x:"place.model_dump() = 양식 객체를 {\"name\":…, \"description\":…} 딕셔너리로 되돌리는 코드.",carry:"sb.table(\"jnu_vc2_places\").insert(...)"},
    {n:6,l:[[63,63]],t:"Supabase에 저장을 요청하고 결과를 기다립니다",c:"63번째 줄 한 줄이 실제 인터넷 통신(HTTPS)을 일으켜요. 자세한 내용은 위의 'Supabase' 탭에서 다뤄요. 응답이 오면 res에 담깁니다.",x:"여기가 이 요청에서 가장 오래 걸리는 구간이에요.",carry:"저장 요청 → 결과 res"},
    {n:7,l:[[66,66],[60,60]],t:"return한 값이 JSON 응답으로 자동 변환됩니다",c:"함수가 돌려준 res.data[0](파이썬 딕셔너리)을 FastAPI가 JSON 글자로 바꾸고, status_code=201(\"새로 만들었어요\")을 붙여 문지기를 거쳐 브라우저로 보냅니다. 브라우저의 fetch가 이 JSON을 받으면 끝!",x:"return 하나만 썼는데 JSON 변환·상태코드·헤더 작성은 FastAPI가 모두 해 줘요.",carry:"201 Created + {id:3, name:'우도'…}"}
   ]
@@ -238,14 +238,14 @@ const TABS = {
  sb: {
   label:"④ Supabase 동작 원리", file:"요청이 변환되는 과정", code:SB_FILES,
   intro:"Supabase = 클라우드에 있는 PostgreSQL 데이터베이스 + 그 앞에 붙은 '자동 주문 창구(REST API)'. 우리는 SQL을 직접 쓰지 않아도 돼요.",
-  nodes:[["🧠","main.py","sb.table()"],["📚","supabase-py","번역기"],["🌐","HTTPS","/rest/v1"],["🔎","PostgREST","API→SQL"],["🛂","권한(RLS)","열쇠 확인"],["🗄️","Postgres","places 표"]],
+  nodes:[["🧠","main.py","sb.table()"],["📚","supabase-py","번역기"],["🌐","HTTPS","/rest/v1"],["🔎","PostgREST","API→SQL"],["🛂","권한(RLS)","열쇠 확인"],["🗄️","Postgres","jnu_vc2_places 표"]],
   steps:[
-   {n:0,l:[[1,2]],t:"우리는 파이썬 한 줄만 씁니다",c:"sb.table(\"places\").insert(...).execute() 처럼 '표 이름 → 할 일 → 실행' 순서로 적어요. .select / .insert / .delete / .eq 같은 이름을 이어 붙이는 방식이에요.",x:"SQL을 몰라도 쓸 수 있도록 만든 번역용 문법이에요.",carry:"sb.table('places').insert({...})"},
-   {n:1,l:[[4,11]],t:"supabase 라이브러리가 HTTP 요청으로 번역합니다",c:"위 파이썬 코드가 POST https://xxxx.supabase.co/rest/v1/places 라는 인터넷 요청으로 바뀌어요. 헤더에 apikey로 SECRET_KEY가 실려요. 즉 Supabase도 결국 '주소로 요청 보내는' API 서버예요(FastAPI와 같은 방식).",x:"그래서 URL이 틀리면 연결 오류, 키가 틀리면 401/403 오류가 나요.",carry:"POST /rest/v1/places + apikey"},
+   {n:0,l:[[1,2]],t:"우리는 파이썬 한 줄만 씁니다",c:"sb.table(\"jnu_vc2_places\").insert(...).execute() 처럼 '표 이름 → 할 일 → 실행' 순서로 적어요. .select / .insert / .delete / .eq 같은 이름을 이어 붙이는 방식이에요.",x:"SQL을 몰라도 쓸 수 있도록 만든 번역용 문법이에요.",carry:"sb.table('jnu_vc2_places').insert({...})"},
+   {n:1,l:[[4,11]],t:"supabase 라이브러리가 HTTP 요청으로 번역합니다",c:"위 파이썬 코드가 POST https://xxxx.supabase.co/rest/v1/jnu_vc2_places 라는 인터넷 요청으로 바뀌어요. 헤더에 apikey로 SECRET_KEY가 실려요. 즉 Supabase도 결국 '주소로 요청 보내는' API 서버예요(FastAPI와 같은 방식).",x:"그래서 URL이 틀리면 연결 오류, 키가 틀리면 401/403 오류가 나요.",carry:"POST /rest/v1/jnu_vc2_places + apikey"},
    {n:2,l:[[4,11]],t:"HTTPS로 암호화되어 Supabase 서버에 도착합니다",c:"내 PC(또는 Railway)에서 Supabase 클라우드로 인터넷을 건너가요. 우리 서버 → Supabase 구간이 '서버끼리의 통신'이에요. 브라우저는 이 구간에 끼지 않아요.",x:"브라우저가 Supabase를 직접 호출하지 않으니 SECRET_KEY가 화면에 노출되지 않아요.",carry:"암호화된 요청"},
-   {n:3,l:[[13,16]],t:"PostgREST가 요청을 SQL로 바꿉니다",c:"Supabase 앞단의 PostgREST가 \"POST places + JSON\"을 읽고 insert into places … returning * 라는 SQL 문장을 만들어요. 표의 구조를 보고 자동으로 API를 만들어 주기 때문에 schema.sql로 표만 만들면 API가 생겨요.",x:"표(places)가 없으면 'Could not find the table' 오류 — 처음 /health/db에서 봤던 바로 그것!",carry:"insert into places … returning *"},
+   {n:3,l:[[13,16]],t:"PostgREST가 요청을 SQL로 바꿉니다",c:"Supabase 앞단의 PostgREST가 \"POST jnu_vc2_places + JSON\"을 읽고 insert into jnu_vc2_places … returning * 라는 SQL 문장을 만들어요. 표의 구조를 보고 자동으로 API를 만들어 주기 때문에 schema.sql로 표만 만들면 API가 생겨요.",x:"표(jnu_vc2_places)가 없으면 'Could not find the table' 오류 — 처음 /health/db에서 봤던 바로 그것!",carry:"insert into jnu_vc2_places … returning *"},
    {n:4,l:[[6,7]],t:"열쇠를 확인해 권한을 줍니다 (RLS)",c:"RLS(행 수준 보안)는 \"누가 어떤 행을 읽고 쓸 수 있나\" 규칙이에요. 우리가 쓰는 SECRET_KEY는 서버 전용 최고 권한 열쇠라서 이 규칙을 통과(우회)해요. 반대로 브라우저용 공개 키(publishable)는 규칙에 막혀요.",x:"schema.sql에서 RLS를 켜고 정책을 안 만든 이유: 서버(secret key)만 접근하게 하려는 거예요. 그래서 이 키는 절대 index.html에 넣으면 안 돼요!",carry:"secret key → 전체 권한 ✔"},
-   {n:5,l:[[13,16]],t:"Postgres 데이터베이스가 표에 행을 저장합니다",c:"places 표에 새 줄이 추가돼요. id는 자동 번호(identity), created_at은 현재 시각이 자동으로 채워져요. 저장 후 'returning *' 덕분에 저장된 줄 전체를 바로 돌려줘요.",x:"Supabase 대시보드 > Table Editor에서 같은 데이터를 눈으로 볼 수 있어요.",carry:"행 저장 완료 (id=3)"},
+   {n:5,l:[[13,16]],t:"Postgres 데이터베이스가 표에 행을 저장합니다",c:"jnu_vc2_places 표에 새 줄이 추가돼요. id는 자동 번호(identity), created_at은 현재 시각이 자동으로 채워져요. 저장 후 'returning *' 덕분에 저장된 줄 전체를 바로 돌려줘요.",x:"Supabase 대시보드 > Table Editor에서 같은 데이터를 눈으로 볼 수 있어요.",carry:"행 저장 완료 (id=3)"},
    {n:0,l:[[18,24]],t:"결과가 거꾸로 돌아와 res.data가 됩니다",c:"JSON 결과가 HTTPS로 돌아오면 supabase 라이브러리가 파이썬 리스트로 바꿔 res.data에 넣어줘요. main.py의 return res.data[0]이 이것을 FastAPI 응답으로 내보내고, ②번 탭의 마지막 단계로 이어집니다.",x:"전체 여정: 브라우저 → FastAPI → supabase-py → Supabase → 다시 거꾸로.",carry:"res.data[0] = {id:3, name:'우도'…}"}
   ]
  }

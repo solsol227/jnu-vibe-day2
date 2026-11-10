@@ -77,7 +77,7 @@
     <div class="row">
       <div class="box" id="b-front"><div class="ico">🖥️</div><h3>프론트엔드</h3><div class="role">화면 (손님)</div><small>frontend/index.html<br>로컬: localhost:5500<br>배포: Vercel</small></div>
       <div class="box" id="b-back"><div class="ico">⚙️</div><h3>FastAPI 서버</h3><div class="role">두뇌 (직원)</div><small>my-api/main.py<br>로컬: 127.0.0.1:8000<br>배포: Railway</small></div>
-      <div class="box" id="b-db"><div class="ico">🗄️</div><h3>Supabase</h3><div class="role">저장소 (창고)</div><small>places 표(테이블)<br>클라우드에 있음</small></div>
+      <div class="box" id="b-db"><div class="ico">🗄️</div><h3>Supabase</h3><div class="role">저장소 (창고)</div><small>jnu_vc2_places 표(테이블)<br>클라우드에 있음</small></div>
     </div>
     <div class="track"><div class="lane"></div><div class="packet hide" id="pk">📦</div></div>
     <div class="bubble" id="bubble"></div>
@@ -130,13 +130,13 @@ const scenarios = {
       code:'FRONT_ORIGINS = os.getenv("FRONT_ORIGINS")...\napp.add_middleware(\n  CORSMiddleware,\n  <hl>allow_origins=FRONT_ORIGINS,</hl>\n)' },
     { at:"back", pk:"🧠", bubble:"list_places() 함수 실행", title:"주소에 맞는 함수가 실행됩니다", where:"my-api/main.py",
       desc:"/places 라는 주소는 list_places 함수와 연결돼 있어요. 서버는 이 함수를 실행해서 \"창고에서 가져와야겠다\"고 판단해요.",
-      code:'<hl>@app.get("/places")</hl>\ndef list_places():\n    res = sb.table("places")\n            .select("*")\n            .order("id", desc=True)\n            .execute()' },
-    { at:"back", from:"back", to:"db", pk:"🔑", bubble:"secret key + \"places 전부 줘\"", title:"서버가 Supabase 창고에 요청합니다", where:"my-api/main.py → Supabase",
+      code:'<hl>@app.get("/places")</hl>\ndef list_places():\n    res = sb.table("jnu_vc2_places")\n            .select("*")\n            .order("id", desc=True)\n            .execute()' },
+    { at:"back", from:"back", to:"db", pk:"🔑", bubble:"secret key + \"jnu_vc2_places 전부 줘\"", title:"서버가 Supabase 창고에 요청합니다", where:"my-api/main.py → Supabase",
       desc:"서버만 가진 열쇠(SUPABASE_SECRET_KEY)를 들고 창고에 다녀와요. 손님(브라우저)은 이 열쇠를 절대 보지 못해요. 그래서 안전해요.",
       code:'SUPABASE_URL = os.environ["SUPABASE_URL"]\n<hl>SUPABASE_SECRET_KEY = os.environ[...]</hl>   # .env에서 읽음\nsb = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)' },
-    { at:"db", pk:"📚", bubble:"places 표에서 행(row)을 찾는 중…", title:"Supabase가 데이터를 꺼냅니다", where:"Supabase > Table Editor > places",
-      desc:"엑셀 시트처럼 생긴 places 표에서 모든 행을 꺼내요. 표 구조는 my-api/schema.sql 에 적어 둔 대로 만들어졌어요.",
-      code:'create table public.places (\n  <hl>id, name, description,</hl>\n  created_at\n);' },
+    { at:"db", pk:"📚", bubble:"jnu_vc2_places 표에서 행(row)을 찾는 중…", title:"Supabase가 데이터를 꺼냅니다", where:"Supabase > Table Editor > jnu_vc2_places",
+      desc:"엑셀 시트처럼 생긴 jnu_vc2_places 표에서 모든 행을 꺼내요. 표 구조는 my-api/schema.sql 에 적어 둔 대로 만들어졌어요.",
+      code:'create table public.jnu_vc2_places (\n  <hl>id, name, description,</hl>\n  created_at\n);' },
     { at:"back", from:"db", to:"back", pk:"📦", bubble:"[{id:1, name:\"한라산\"}, …]", title:"창고 → 서버로 데이터가 돌아옵니다", where:"Supabase → my-api/main.py",
       desc:"꺼낸 데이터가 서버로 돌아와요. 서버는 이걸 JSON이라는 택배 상자 규격에 담아요.",
       code:'    return <hl>res.data</hl>   # 데이터를 응답으로 돌려줌' },
@@ -156,8 +156,8 @@ const scenarios = {
       code:'class PlaceIn(BaseModel):\n    <hl>name: str</hl>\n    description: str = ""' },
     { at:"back", from:"back", to:"db", pk:"🔑", bubble:"secret key + \"이거 저장해줘\"", title:"서버가 Supabase에 저장을 부탁합니다", where:"my-api/main.py → Supabase",
       desc:"역시 서버만 가진 열쇠로 창고에 새 물건을 넣어요.",
-      code:'@app.post("/places", status_code=201)\ndef create_place(place: PlaceIn):\n    res = <hl>sb.table("places").insert(...)</hl>' },
-    { at:"db", pk:"💾", bubble:"새 행 저장 완료 (id 자동 부여)", title:"Supabase가 표에 새 줄을 추가합니다", where:"Supabase > places",
+      code:'@app.post("/places", status_code=201)\ndef create_place(place: PlaceIn):\n    res = <hl>sb.table("jnu_vc2_places").insert(...)</hl>' },
+    { at:"db", pk:"💾", bubble:"새 행 저장 완료 (id 자동 부여)", title:"Supabase가 표에 새 줄을 추가합니다", where:"Supabase > jnu_vc2_places",
       desc:"id(번호)와 created_at(시간)은 DB가 알아서 채워 줘요.",
       code:'id bigint generated always as identity,\ncreated_at timestamptz default now()' },
     { at:"front", from:"back", to:"front", pk:"📦", bubble:"201 Created + 저장된 데이터", title:"저장 결과가 브라우저로 돌아옵니다", where:"my-api/main.py → frontend",
