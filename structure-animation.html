@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>풀스택 구조 쉽게 보기</title>
+<style>
+  :root { --bg:#f4f9fb; --card:#fff; --text:#1d2b32; --sub:#5a6b73; --front:#0e7c9b; --back:#f28c28; --db:#3ecf8e; --line:#cfdde3; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#10181c; --card:#1a252b; --text:#e6eef1; --sub:#9bb0b8; --line:#33454d; }
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,"Malgun Gothic",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; padding:24px 16px 60px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { font-size:1.7rem; margin-bottom:4px; }
+  .lead { color:var(--sub); margin-bottom:20px; }
+  .analogy { background:var(--card); border-left:5px solid var(--back); border-radius:10px; padding:12px 16px; margin-bottom:22px; font-size:.95rem; }
+  .tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .tabs button, .ctrl button { border:1px solid var(--line); background:var(--card); color:var(--text); padding:8px 16px; border-radius:20px; cursor:pointer; font-size:.95rem; }
+  .tabs button.on { background:var(--front); color:#fff; border-color:var(--front); }
+  .ctrl button.primary { background:var(--back); color:#fff; border-color:var(--back); font-weight:700; }
+
+  .stage { position:relative; background:var(--card); border-radius:16px; padding:26px 12px 18px; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+  .row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; position:relative; z-index:2; }
+  .box { border:3px solid var(--line); border-radius:14px; padding:14px 8px; text-align:center; transition:all .4s; background:var(--bg); }
+  .box .ico { font-size:2.4rem; }
+  .box h3 { font-size:1rem; margin:2px 0; }
+  .box small { display:block; color:var(--sub); font-size:.78rem; line-height:1.35; }
+  .box .role { font-weight:700; font-size:.85rem; margin-top:4px; }
+  #b-front.active { border-color:var(--front); box-shadow:0 0 0 6px color-mix(in srgb, var(--front) 22%, transparent); transform:scale(1.04); }
+  #b-back.active  { border-color:var(--back);  box-shadow:0 0 0 6px color-mix(in srgb, var(--back) 22%, transparent);  transform:scale(1.04); }
+  #b-db.active    { border-color:var(--db);    box-shadow:0 0 0 6px color-mix(in srgb, var(--db) 22%, transparent);    transform:scale(1.04); }
+
+  .track { position:absolute; left:0; right:0; top:68px; height:0; z-index:1; }
+  .packet { position:absolute; top:-18px; left:0; width:38px; height:38px; border-radius:50%; background:var(--back); color:#fff;
+            display:flex; align-items:center; justify-content:center; font-size:1.2rem; transition:left 1.2s ease-in-out, opacity .3s, background .3s; z-index:5; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+  .packet.hide { opacity:0; }
+  .lane { position:absolute; left:16%; right:16%; top:0; border-top:3px dashed var(--line); }
+  .bubble { margin-top:56px; text-align:center; font-weight:700; min-height:28px; color:var(--back); font-size:.95rem; }
+
+  .info { display:grid; grid-template-columns:1.1fr 1fr; gap:14px; margin-top:16px; }
+  @media (max-width:720px) { .info { grid-template-columns:1fr; } .box small { display:none; } }
+  .panel { background:var(--card); border-radius:14px; padding:16px 18px; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+  .step-no { display:inline-block; background:var(--front); color:#fff; border-radius:12px; padding:0 10px; font-size:.8rem; font-weight:700; margin-bottom:6px; }
+  .panel h2 { font-size:1.15rem; margin-bottom:6px; }
+  .panel p { font-size:.95rem; }
+  .where { color:var(--sub); font-size:.82rem; margin-bottom:6px; }
+  pre { background:#14212a; color:#d6ecf3; padding:12px 14px; border-radius:10px; font-size:.82rem; line-height:1.55; overflow-x:auto; font-family:Consolas,monospace; white-space:pre-wrap; }
+  pre .hl { background:rgba(242,140,40,.35); display:block; border-radius:4px; }
+  .ctrl { display:flex; gap:8px; align-items:center; margin-top:16px; flex-wrap:wrap; }
+  .dots { display:flex; gap:6px; margin-left:auto; }
+  .dots i { width:10px; height:10px; border-radius:50%; background:var(--line); display:block; cursor:pointer; }
+  .dots i.on { background:var(--back); }
+  .glossary { margin-top:26px; }
+  .glossary h2 { font-size:1.15rem; margin-bottom:10px; }
+  .gl { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+  .gl div { background:var(--card); border-radius:10px; padding:10px 14px; font-size:.88rem; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .gl b { color:var(--front); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🍊 우리 앱은 이렇게 움직여요</h1>
+  <p class="lead">프론트엔드 → FastAPI(main.py) → Supabase. 버튼을 눌러 데이터가 어떻게 오가는지 따라가 보세요.</p>
+
+  <div class="analogy">
+    🍽️ <b>식당으로 비유하면:</b> 프론트엔드는 <b>손님이 보는 메뉴판·테이블</b>, FastAPI는 <b>주문을 받아 전달하는 직원(홀)</b>, Supabase는 <b>재료가 보관된 창고</b>예요.
+    손님은 창고에 직접 들어가지 못하고, 반드시 직원(서버)을 통해서만 주문해요. 창고 열쇠(secret key)는 직원만 갖고 있고요.
+  </div>
+
+  <div class="tabs">
+    <button id="t-list" class="on">① 목록 보기 (GET)</button>
+    <button id="t-add">② 새 장소 추가 (POST)</button>
+  </div>
+
+  <div class="stage">
+    <div class="row">
+      <div class="box" id="b-front"><div class="ico">🖥️</div><h3>프론트엔드</h3><div class="role">화면 (손님)</div><small>frontend/index.html<br>로컬: localhost:5500<br>배포: Vercel</small></div>
+      <div class="box" id="b-back"><div class="ico">⚙️</div><h3>FastAPI 서버</h3><div class="role">두뇌 (직원)</div><small>my-api/main.py<br>로컬: 127.0.0.1:8000<br>배포: Railway</small></div>
+      <div class="box" id="b-db"><div class="ico">🗄️</div><h3>Supabase</h3><div class="role">저장소 (창고)</div><small>places 표(테이블)<br>클라우드에 있음</small></div>
+    </div>
+    <div class="track"><div class="lane"></div><div class="packet hide" id="pk">📦</div></div>
+    <div class="bubble" id="bubble"></div>
+  </div>
+
+  <div class="info">
+    <div class="panel">
+      <span class="step-no" id="sno"></span>
+      <h2 id="stitle"></h2>
+      <p id="sdesc"></p>
+    </div>
+    <div class="panel">
+      <div class="where" id="swhere"></div>
+      <pre id="scode"></pre>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <button id="prev">◀ 이전</button>
+    <button id="play" class="primary">▶ 자동 재생</button>
+    <button id="next">다음 ▶</button>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <div class="glossary">
+    <h2>용어 사전</h2>
+    <div class="gl">
+      <div><b>API</b> : 프로그램끼리 대화하는 "주문 창구". 주소(/places)마다 하는 일이 달라요.</div>
+      <div><b>요청 / 응답</b> : 요청 = "목록 주세요", 응답 = "여기 있어요". 항상 이 한 쌍으로 움직여요.</div>
+      <div><b>JSON</b> : 데이터를 담는 약속된 글자 포맷. 택배 상자 규격이라고 생각하세요.</div>
+      <div><b>CORS</b> : 서버의 출입 명단. 허락된 사이트(FRONT_ORIGINS)만 서버를 쓸 수 있어요.</div>
+      <div><b>.env / 환경변수</b> : 비밀번호·열쇠를 코드 밖에 따로 적어 둔 메모. 깃에 올리면 안 돼요.</div>
+      <div><b>포트(8000)</b> : 한 컴퓨터 안의 "문 번호". 127.0.0.1은 "내 컴퓨터"라는 뜻이에요.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const POS = { front: 0, back: 1, db: 2 };
+const scenarios = {
+  list: [
+    { at:"front", pk:null, bubble:"", title:"손님이 페이지를 엽니다", where:"frontend/index.html",
+      desc:"브라우저가 화면을 띄우자마자 \"장소 목록 주세요!\"라고 서버에 요청할 준비를 해요. 이 화면은 데이터를 직접 갖고 있지 않아요.",
+      code:'<hl>load();</hl>   // 페이지가 열리면 실행\nasync function load() {\n  const rows = await call("/places");\n}' },
+    { at:"front", from:"front", to:"back", pk:"✉️", bubble:"GET /places  \"목록 주세요\"", title:"서버(FastAPI)로 요청을 보냅니다", where:"frontend/index.html → 127.0.0.1:8000",
+      desc:"편지(요청)가 인터넷을 타고 서버 주소로 날아가요. 'GET'은 \"가져와줘\"라는 뜻이에요.",
+      code:'const API = "http://localhost:8000";\n<hl>fetch(API + "/places")</hl>' },
+    { at:"back", pk:"🛡️", bubble:"출입 명단 확인 (CORS)", title:"서버 문지기가 신분을 확인합니다", where:"my-api/main.py",
+      desc:"서버는 \"이 요청을 보낸 사이트가 우리 명단에 있나?\"를 먼저 확인해요. 명단은 .env의 FRONT_ORIGINS에 적혀 있어요. 없으면 브라우저가 응답을 막아요.",
+      code:'FRONT_ORIGINS = os.getenv("FRONT_ORIGINS")...\napp.add_middleware(\n  CORSMiddleware,\n  <hl>allow_origins=FRONT_ORIGINS,</hl>\n)' },
+    { at:"back", pk:"🧠", bubble:"list_places() 함수 실행", title:"주소에 맞는 함수가 실행됩니다", where:"my-api/main.py",
+      desc:"/places 라는 주소는 list_places 함수와 연결돼 있어요. 서버는 이 함수를 실행해서 \"창고에서 가져와야겠다\"고 판단해요.",
+      code:'<hl>@app.get("/places")</hl>\ndef list_places():\n    res = sb.table("places")\n            .select("*")\n            .order("id", desc=True)\n            .execute()' },
+    { at:"back", from:"back", to:"db", pk:"🔑", bubble:"secret key + \"places 전부 줘\"", title:"서버가 Supabase 창고에 요청합니다", where:"my-api/main.py → Supabase",
+      desc:"서버만 가진 열쇠(SUPABASE_SECRET_KEY)를 들고 창고에 다녀와요. 손님(브라우저)은 이 열쇠를 절대 보지 못해요. 그래서 안전해요.",
+      code:'SUPABASE_URL = os.environ["SUPABASE_URL"]\n<hl>SUPABASE_SECRET_KEY = os.environ[...]</hl>   # .env에서 읽음\nsb = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)' },
+    { at:"db", pk:"📚", bubble:"places 표에서 행(row)을 찾는 중…", title:"Supabase가 데이터를 꺼냅니다", where:"Supabase > Table Editor > places",
+      desc:"엑셀 시트처럼 생긴 places 표에서 모든 행을 꺼내요. 표 구조는 my-api/schema.sql 에 적어 둔 대로 만들어졌어요.",
+      code:'create table public.places (\n  <hl>id, name, description,</hl>\n  created_at\n);' },
+    { at:"back", from:"db", to:"back", pk:"📦", bubble:"[{id:1, name:\"한라산\"}, …]", title:"창고 → 서버로 데이터가 돌아옵니다", where:"Supabase → my-api/main.py",
+      desc:"꺼낸 데이터가 서버로 돌아와요. 서버는 이걸 JSON이라는 택배 상자 규격에 담아요.",
+      code:'    return <hl>res.data</hl>   # 데이터를 응답으로 돌려줌' },
+    { at:"front", from:"back", to:"front", pk:"📦", bubble:"200 OK + JSON 응답", title:"브라우저가 받아서 화면에 그립니다", where:"frontend/index.html",
+      desc:"응답이 도착하면 화면이 새로 그려져요. 이게 우리가 눈으로 보는 \"장소 목록\"이에요. 끝! 🎉",
+      code:'const rows = await call("/places");\nrows.forEach(p => {\n  <hl>li.textContent = p.name + " — " + p.description;</hl>\n  ul.appendChild(li);\n});' },
+  ],
+  add: [
+    { at:"front", pk:null, bubble:"", title:"손님이 이름·설명을 입력하고 [추가]를 누릅니다", where:"frontend/index.html",
+      desc:"입력한 글자를 상자(JSON)에 담아 서버로 보낼 준비를 해요.",
+      code:'<hl>body: JSON.stringify({\n  name: "우도", description: "소의 섬"\n})</hl>' },
+    { at:"front", from:"front", to:"back", pk:"✉️", bubble:"POST /places + {name, description}", title:"새 데이터를 서버로 보냅니다", where:"frontend/index.html → 127.0.0.1:8000",
+      desc:"'POST'는 \"새로 저장해줘\"라는 뜻이에요. 이번에는 빈 편지가 아니라 내용이 담긴 편지예요.",
+      code:'fetch(API + "/places", {\n  <hl>method: "POST",</hl>\n  headers: {"Content-Type": "application/json"},\n  body: ...\n})' },
+    { at:"back", pk:"✅", bubble:"내용이 올바른지 검사", title:"서버가 받은 내용을 검사합니다", where:"my-api/main.py",
+      desc:"PlaceIn 이라는 양식에 맞는지 확인해요. name이 비어 있거나 글자가 아니면 여기서 거절돼요.",
+      code:'class PlaceIn(BaseModel):\n    <hl>name: str</hl>\n    description: str = ""' },
+    { at:"back", from:"back", to:"db", pk:"🔑", bubble:"secret key + \"이거 저장해줘\"", title:"서버가 Supabase에 저장을 부탁합니다", where:"my-api/main.py → Supabase",
+      desc:"역시 서버만 가진 열쇠로 창고에 새 물건을 넣어요.",
+      code:'@app.post("/places", status_code=201)\ndef create_place(place: PlaceIn):\n    res = <hl>sb.table("places").insert(...)</hl>' },
+    { at:"db", pk:"💾", bubble:"새 행 저장 완료 (id 자동 부여)", title:"Supabase가 표에 새 줄을 추가합니다", where:"Supabase > places",
+      desc:"id(번호)와 created_at(시간)은 DB가 알아서 채워 줘요.",
+      code:'id bigint generated always as identity,\ncreated_at timestamptz default now()' },
+    { at:"front", from:"back", to:"front", pk:"📦", bubble:"201 Created + 저장된 데이터", title:"저장 결과가 브라우저로 돌아옵니다", where:"my-api/main.py → frontend",
+      desc:"\"저장했어요\"라는 답이 돌아오면 프론트는 목록을 다시 불러와서(GET) 새 장소를 화면에 보여줘요. 🎉",
+      code:'    return res.data[0]   # 저장된 한 줄을 돌려줌\n\n// 프론트\n<hl>load();</hl>   // 목록 새로고침' },
+  ]
+};
+
+let key = "list", idx = 0, timer = null, curPos = 0;
+const $ = id => document.getElementById(id);
+const pk = $("pk");
+
+function colAt(p){ // 패킷 중심 위치(%) : 각 칸 중앙
+  return (p * 33.333 + 16.667);
+}
+function setPk(posName, animate){
+  pk.style.transition = animate ? "" : "none";
+  pk.style.left = "calc(" + colAt(POS[posName]) + "% - 19px)";
+}
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function codeHtml(c){
+  return esc(c).replace(/&lt;hl>/g,'<span class="hl">').replace(/&lt;\/hl>/g,"</span>");
+}
+
+function render(){
+  const steps = scenarios[key], s = steps[idx];
+  ["front","back","db"].forEach(n => $("b-"+n).classList.toggle("active", n === s.at));
+  $("sno").textContent = "STEP " + (idx+1) + " / " + steps.length;
+  $("stitle").textContent = s.title;
+  $("sdesc").textContent = s.desc;
+  $("swhere").textContent = "📍 " + s.where;
+  $("scode").innerHTML = codeHtml(s.code);
+  $("bubble").textContent = s.bubble;
+  pk.textContent = s.pk || "";
+  if (s.from) {
+    pk.classList.remove("hide");
+    setPk(s.from, false);
+    pk.getBoundingClientRect(); // 강제 리플로우
+    setPk(s.to, true);
+  } else if (s.pk) {
+    pk.classList.remove("hide");
+    setPk(s.at, false);
+  } else {
+    pk.classList.add("hide");
+  }
+  [...$("dots").children].forEach((d,i) => d.classList.toggle("on", i === idx));
+}
+
+function buildDots(){
+  const d = $("dots"); d.innerHTML = "";
+  scenarios[key].forEach((_, i) => { const e = document.createElement("i"); e.onclick = () => { stop(); idx = i; render(); }; d.appendChild(e); });
+}
+function go(n){ const len = scenarios[key].length; idx = (n + len) % len; render(); }
+function stop(){ clearInterval(timer); timer = null; $("play").textContent = "▶ 자동 재생"; }
+function start(){
+  $("play").textContent = "⏸ 멈춤";
+  timer = setInterval(() => { if (idx === scenarios[key].length - 1) { stop(); } else go(idx + 1); }, 3800);
+}
+function pick(k){
+  stop(); key = k; idx = 0;
+  $("t-list").classList.toggle("on", k === "list");
+  $("t-add").classList.toggle("on", k === "add");
+  buildDots(); render();
+}
+$("t-list").onclick = () => pick("list");
+$("t-add").onclick = () => pick("add");
+$("prev").onclick = () => { stop(); go(idx - 1); };
+$("next").onclick = () => { stop(); go(idx + 1); };
+$("play").onclick = () => { if (timer) stop(); else { if (idx === scenarios[key].length - 1) { idx = 0; render(); } start(); } };
+pick("list");
+</script>
+</body>
+</html>

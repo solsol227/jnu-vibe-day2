@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full-stack 테스트</title>
+  <style>
+    body { font-family: system-ui, "Malgun Gothic", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    .row { display: flex; gap: 8px; margin: 12px 0; }
+    input { flex: 1; padding: 8px; }
+    button { padding: 8px 14px; cursor: pointer; }
+    li { margin: 6px 0; display: flex; justify-content: space-between; }
+    .ok { color: #0a7d32; } .err { color: #c0392b; }
+    code { background: #eee; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Full-stack 동작 테스트</h1>
+  <p>API: <code id="api"></code></p>
+  <ul>
+    <li><span>API /health</span> <b id="s-api">…</b></li>
+    <li><span>Supabase /health/db</span> <b id="s-db">…</b></li>
+  </ul>
+
+  <h2>places</h2>
+  <div class="row">
+    <input id="name" placeholder="이름">
+    <input id="desc" placeholder="설명">
+    <button id="add">추가</button>
+  </div>
+  <ul id="list"></ul>
+
+  <script>
+    // 로컬은 localhost:8000, 배포 시 Vercel 환경에 맞게 이 값만 Railway URL로 교체
+    const API = location.hostname === "localhost" || location.hostname === "127.0.0.1"
+      ? "http://localhost:8000"
+      : "https://YOUR-APP.up.railway.app";
+    document.getElementById("api").textContent = API;
+
+    const $ = (id) => document.getElementById(id);
+    async function call(path, opts) {
+      const r = await fetch(API + path, opts);
+      if (!r.ok) throw new Error(r.status + " " + (await r.text()));
+      return r.json();
+    }
+    function status(id, p) {
+      p.then(() => { $(id).textContent = "OK"; $(id).className = "ok"; })
+       .catch((e) => { $(id).textContent = "FAIL: " + e.message; $(id).className = "err"; });
+    }
+    async function load() {
+      const ul = $("list");
+      try {
+        const rows = await call("/places");
+        ul.innerHTML = "";
+        rows.forEach((p) => {
+          const li = document.createElement("li");
+          li.innerHTML = "<span></span><button>삭제</button>";
+          li.firstChild.textContent = p.name + " — " + p.description;
+          li.lastChild.onclick = async () => { await call("/places/" + p.id, { method: "DELETE" }); load(); };
+          ul.appendChild(li);
+        });
+      } catch (e) { ul.innerHTML = '<li class="err"></li>'; ul.firstChild.textContent = e.message; }
+    }
+    $("add").onclick = async () => {
+      if (!$("name").value.trim()) return;
+      await call("/places", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: $("name").value, description: $("desc").value }),
+      });
+      $("name").value = $("desc").value = "";
+      load();
+    };
+    status("s-api", call("/health"));
+    status("s-db", call("/health/db"));
+    load();
+  </script>
+</body>
+</html>
