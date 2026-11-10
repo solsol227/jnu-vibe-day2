@@ -49,7 +49,7 @@ def health():
 def health_db():
     """Supabase 연결 + places 테이블 존재 확인"""
     try:
-        sb.table("places").select("id").limit(1).execute()
+        sb.table("jnu_vc2_places").select("id").limit(1).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"supabase error: {e}")
     return {"status": "ok", "db": "connected"}
@@ -58,7 +58,7 @@ def health_db():
 @app.get("/places")
 def list_places():
     try:
-        res = sb.table("places").select("*").order("id", desc=True).execute()
+        res = sb.table("jnu_vc2_places").select("*").order("id", desc=True).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return res.data
@@ -67,7 +67,7 @@ def list_places():
 @app.post("/places", status_code=201)
 def create_place(place: PlaceIn):
     try:
-        res = sb.table("places").insert(place.model_dump()).execute()
+        res = sb.table("jnu_vc2_places").insert(place.model_dump()).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return res.data[0]
@@ -76,7 +76,7 @@ def create_place(place: PlaceIn):
 @app.delete("/places/{place_id}")
 def delete_place(place_id: int):
     try:
-        sb.table("places").delete().eq("id", place_id).execute()
+        sb.table("jnu_vc2_places").delete().eq("id", place_id).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return {"deleted": place_id}
@@ -99,8 +99,8 @@ class QuantityIn(BaseModel):
 def load_cart(cart_id: str) -> dict:
     """장바구니 내용 + 합계를 계산해서 돌려준다."""
     rows = (
-        sb.table("cart_items")
-        .select("product_id, quantity, product:products(*)")
+        sb.table("jnu_vc2_cart_items")
+        .select("product_id, quantity, product:jnu_vc2_products(*)")
         .eq("cart_id", cart_id)
         .order("id")
         .execute()
@@ -120,7 +120,7 @@ def load_cart(cart_id: str) -> dict:
 @app.get("/products")
 def list_products():
     try:
-        return sb.table("products").select("*").order("id").execute().data
+        return sb.table("jnu_vc2_products").select("*").order("id").execute().data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -138,12 +138,12 @@ def add_to_cart(cart_id: CartId, body: CartItemIn):
     """담기: 이미 담긴 상품이면 수량만 늘린다."""
     try:
         product = (
-            sb.table("products").select("id").eq("id", body.product_id).execute().data
+            sb.table("jnu_vc2_products").select("id").eq("id", body.product_id).execute().data
         )
         if not product:
             raise HTTPException(status_code=404, detail="상품이 없습니다")
         found = (
-            sb.table("cart_items")
+            sb.table("jnu_vc2_cart_items")
             .select("quantity")
             .eq("cart_id", cart_id)
             .eq("product_id", body.product_id)
@@ -152,11 +152,11 @@ def add_to_cart(cart_id: CartId, body: CartItemIn):
         )
         if found:
             qty = min(99, found[0]["quantity"] + body.quantity)
-            sb.table("cart_items").update({"quantity": qty}).eq(
+            sb.table("jnu_vc2_cart_items").update({"quantity": qty}).eq(
                 "cart_id", cart_id
             ).eq("product_id", body.product_id).execute()
         else:
-            sb.table("cart_items").insert(
+            sb.table("jnu_vc2_cart_items").insert(
                 {
                     "cart_id": cart_id,
                     "product_id": body.product_id,
@@ -174,7 +174,7 @@ def add_to_cart(cart_id: CartId, body: CartItemIn):
 def set_quantity(cart_id: CartId, product_id: int, body: QuantityIn):
     """수량 변경 (0 이면 삭제)"""
     try:
-        t = sb.table("cart_items")
+        t = sb.table("jnu_vc2_cart_items")
         if body.quantity == 0:
             t.delete().eq("cart_id", cart_id).eq("product_id", product_id).execute()
         else:
@@ -196,7 +196,7 @@ def set_quantity(cart_id: CartId, product_id: int, body: QuantityIn):
 @app.delete("/cart/{cart_id}/items/{product_id}")
 def remove_from_cart(cart_id: CartId, product_id: int):
     try:
-        sb.table("cart_items").delete().eq("cart_id", cart_id).eq(
+        sb.table("jnu_vc2_cart_items").delete().eq("cart_id", cart_id).eq(
             "product_id", product_id
         ).execute()
         return load_cart(cart_id)
@@ -207,7 +207,7 @@ def remove_from_cart(cart_id: CartId, product_id: int):
 @app.delete("/cart/{cart_id}")
 def clear_cart(cart_id: CartId):
     try:
-        sb.table("cart_items").delete().eq("cart_id", cart_id).execute()
+        sb.table("jnu_vc2_cart_items").delete().eq("cart_id", cart_id).execute()
         return load_cart(cart_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
